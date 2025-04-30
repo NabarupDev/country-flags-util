@@ -1,0 +1,42 @@
+{
+  "name": "country-flags-util",
+  "version": "1.0.0",
+  "description": "A comprehensive utility for working with country data, flags (emoji and images), and generating country select dropdowns across various frameworks",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "keywords": [
+    "country",
+    "flags",
+    "emoji",
+    "country-select",
+    "dropdown",
+    "react",
+    "angular",
+    "vanilla-js",
+    "flag-images",
+    "internationalization",
+    "i18n",
+    "flag-emoji",
+    "iso-codes",
+    "country-codes"
+  ],
+  "author": {
+    "name": "Nabarup Roy",
+    "url": "https://github.com/NabarupDev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NabarupDev/country-flags-util.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NabarupDev/country-flags-util/issues"
+  },
+  "homepage": "https://github.com/NabarupDev/country-flags-util#readme",
+  "license": "MIT",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=10.0.0"
+  }
+}
