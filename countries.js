@@ -157,7 +157,6 @@ const countries = [
   { name: "Nauru", code: "NR" },
   { name: "Nepal", code: "NP" },
   { name: "Netherlands", code: "NL" },
-  { name: "Netherlands Antilles", code: "AN" },
   { name: "New Caledonia", code: "NC" },
   { name: "New Zealand", code: "NZ" },
   { name: "Nicaragua", code: "NI" },
