@@ -490,30 +490,271 @@ const { html, js } = vanilla.getVanillaImplementation({
 
 ```jsx
 // Using the generated component
-import React from 'react';
-import { CountrySelect } from 'country-flags-util/react';
+import React, { useState, useRef, useEffect } from 'react';
+import { getAllCountries, getFlagImageUrl, getFlagEmoji } from 'country-flags-util';
 
-function App() {
-  const handleCountryChange = (e) => {
-    console.log('Selected country:', e.target.value);
+export default function CountrySelectPage() {
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [useImageFlags, setUseImageFlags] = useState(true);
+  const [enableSearch, setEnableSearch] = useState(true);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const countries = getAllCountries();
+  const dropdownRef = useRef(null);
+  const selectedItemRef = useRef(null);
+  
+  const handleCountryChange = (countryCode) => {
+    setSelectedCountry(countryCode);
+    setIsDropdownOpen(false);
+  };
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+  
+  // Scroll to selected country when dropdown opens
+  useEffect(() => {
+    if (isDropdownOpen && selectedCountry && selectedItemRef.current) {
+      // Small delay to ensure dropdown is fully rendered
+      setTimeout(() => {
+        selectedItemRef.current.scrollIntoView({
+          behavior: 'auto',
+          block: 'center'
+        });
+      }, 100);
+    }
+  }, [isDropdownOpen, selectedCountry]);
+  
+  // Find selected country data
+  const selectedCountryData = countries.find(country => country.code === selectedCountry);
+  
+  // Filter countries based on search term
+  const filteredCountries = searchTerm && enableSearch
+    ? countries.filter(country => 
+        country.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    : countries;
+  
+  // Function to assign ref to selected country list item
+  const getItemRef = (code) => {
+    if (code === selectedCountry) {
+      return selectedItemRef;
+    }
+    return null;
   };
 
   return (
-    <div className="App">
-      <h1>Country Selector</h1>
-      <CountrySelect 
-        id="country-selector"
-        className="form-select"
-        defaultValue="US"
-        onChange={handleCountryChange}
-        useImageFlags={true}
-        flagWidth={30}
-      />
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-md  md:max-w-2xl p-6">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Country Select Example</h1>
+        
+        {/* Toggle for flag type */}
+        <div className="mb-6">
+          <label className="inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={useImageFlags}
+              onChange={() => setUseImageFlags(!useImageFlags)}
+              className="sr-only peer" 
+            />
+            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ms-3 text-sm font-medium text-gray-900">
+              {useImageFlags ? 'Using Image Flags' : 'Using Emoji Flags'}
+            </span>
+          </label>
+        </div>
+        
+        {/* Toggle for search functionality */}
+        <div className="mb-6">
+          <label className="inline-flex items-center cursor-pointer">
+            <input 
+              type="checkbox" 
+              checked={enableSearch}
+              onChange={() => setEnableSearch(!enableSearch)}
+              className="sr-only peer" 
+            />
+            <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ms-3 text-sm font-medium text-gray-900">
+              {enableSearch ? 'Search Enabled' : 'Search Disabled'}
+            </span>
+          </label>
+        </div>
+        
+        {/* Country Select Dropdown */}
+        <div className="mb-6">
+          <label htmlFor="country-select" className="block text-sm font-medium text-gray-700 mb-1">
+            Select a Country
+          </label>
+          
+          {useImageFlags ? (
+            // Custom dropdown for image flags
+            <div className="relative" ref={dropdownRef}>
+              <button
+                type="button"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border text-left"
+              >
+                {selectedCountry ? (
+                  <div className="flex items-center">
+                    <img 
+                      src={getFlagImageUrl(selectedCountry, 40)} 
+                      alt={selectedCountryData?.name} 
+                      className="h-5 w-auto mr-2"
+                    />
+                    <span>{selectedCountryData?.name || 'Choose a country...'}</span>
+                  </div>
+                ) : (
+                  <span>Choose a country...</span>
+                )}
+              </button>
+              
+              {isDropdownOpen && (
+                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                  {enableSearch && (
+                    <div className="sticky top-0 bg-white p-2 border-b border-gray-200">
+                      <input
+                        type="text"
+                        placeholder="Search countries..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onClick={(e) => e.stopPropagation()}
+                      />
+                    </div>
+                  )}
+                  <ul className="py-1">
+                    {filteredCountries.length > 0 ? (
+                      filteredCountries.map(({ code, name }) => (
+                        <li 
+                          key={code} 
+                          onClick={() => handleCountryChange(code)}
+                          className={`flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer ${
+                            code === selectedCountry 
+                              ? 'bg-blue-50 animate-[pulse_1.5s_ease-in-out]' 
+                              : ''
+                          }`}
+                          ref={getItemRef(code)}
+                        >
+                          <img 
+                            src={getFlagImageUrl(code, 40)} 
+                            alt={name} 
+                            className="h-5 w-8 object-cover mr-2"
+                          />
+                          <span>{name}</span>
+                        </li>
+                      ))
+                    ) : (
+                      <li className="px-3 py-2 text-gray-500">No countries found</li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Regular dropdown with emoji flags
+            <div className="relative" ref={dropdownRef}>
+              {enableSearch ? (
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border text-left"
+                  >
+                    {selectedCountry ? (
+                      <div className="flex items-center">
+                        <span className="mr-2">{getFlagEmoji(selectedCountry)}</span>
+                        <span>{selectedCountryData?.name || 'Choose a country...'}</span>
+                      </div>
+                    ) : (
+                      <span>Choose a country...</span>
+                    )}
+                  </button>
+                  
+                  {isDropdownOpen && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-y-auto">
+                      <div className="sticky top-0 bg-white p-2 border-b border-gray-200">
+                        <input
+                          type="text"
+                          placeholder="Search countries..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                      <ul className="py-1">
+                        {filteredCountries.length > 0 ? (
+                          filteredCountries.map(({ code, name }) => (
+                            <li 
+                              key={code} 
+                              onClick={() => handleCountryChange(code)}
+                              className={`flex items-center px-3 py-2 hover:bg-gray-100 cursor-pointer ${code === selectedCountry ? 'bg-blue-50' : ''}`}
+                              ref={getItemRef(code)}
+                            >
+                              <span className="mr-2 inline-block w-8 text-center">{getFlagEmoji(code)}</span>
+                              <span>{name}</span>
+                            </li>
+                          ))
+                        ) : (
+                          <li className="px-3 py-2 text-gray-500">No countries found</li>
+                        )}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <select
+                  id="country-select"
+                  value={selectedCountry}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2.5 border"
+                >
+                  <option value="">Choose a country...</option>
+                  {countries.map(({ code, name }) => (
+                    <option key={code} value={code}>
+                      {getFlagEmoji(code)} {name}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {/* Selected Country Display */}
+          {selectedCountryData && (
+            <div className="mt-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+              <h2 className="text-lg font-medium text-gray-900 mb-2">Selected Country</h2>
+              <div className="flex items-center space-x-3">
+                {useImageFlags ? (
+                  <img 
+                    src={getFlagImageUrl(selectedCountryData.code, 40)} 
+                    alt={selectedCountryData.code} 
+                    className="w-12 h-auto"
+                  />
+                ) : (
+                  <span className="text-4xl">{getFlagEmoji(selectedCountryData.code)}</span>
+                )}
+                <div>
+                  <p className="font-medium text-gray-800">{selectedCountryData.name}</p>
+                  <p className="text-sm text-gray-500">Code: {selectedCountryData.code}</p>
+                </div>
+              </div>
+            </div>
+          )}
+      </div>
     </div>
   );
 }
-
-export default App;
 ```
 
 #### Demo Video
